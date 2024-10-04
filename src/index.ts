@@ -3,11 +3,6 @@ import yargs from 'yargs'
 import type { Argv } from 'yargs'
 
 export class Command {
-    constructor(
-        public readonly name: string,
-        public readonly description: string,
-    ) {}
-
     handler() {}
 }
 
@@ -15,8 +10,13 @@ export class Program {
     constructor(
         public readonly name: string,
         public readonly description: string,
-        public readonly commands: Command[],
     ) {}
+
+    private commands: Array<{
+        name: string
+        description: string
+        constructor: new () => Command
+    }> = []
 
     get yargs(): Argv {
         let program = yargs()
@@ -58,11 +58,24 @@ export class Program {
                         // @ts-ignore
                         command[option.key] = argv[option.key as string]
                     })
-                    return command.handler.call(command)
+                    const instance = new command.constructor()
+                    return instance.handler.call(command)
                 },
             )
         })
         return program
+    }
+
+    Command(opts: {
+        name: string
+        description: string
+    }): ClassDecorator {
+        return (target) => {
+            this.commands.push({
+                ...opts,
+                constructor: target as unknown as new () => Command,
+            })
+        }
     }
 }
 

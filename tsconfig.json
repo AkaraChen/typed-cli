@@ -4,7 +4,8 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "outDir": "./build",
-        "noEmit": false
+        "noEmit": false,
+        "strict": false
     },
     "include": ["./src/**/*.ts"]
 }
