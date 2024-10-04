@@ -1,13 +1,13 @@
-import { Program, Command, Option } from './index.js'
+import { Program, Command, Option, Positional } from './index.js'
 
 const program = new Program('git', 'Git version control')
 
 @program.Command({
-    name: 'add',
+    name: 'add <files...>',
     description: 'Add a new file',
 })
 class Add extends Command {
-    @Option()
+    @Positional()
     files: string[] = []
 
     @Option({
@@ -20,6 +20,6 @@ class Add extends Command {
     }
 }
 
-const args = program.yargs.parse(['add', '--files', 'index.js', '-A'])
+const args = program.yargs.parse(['add', 'index.js', '-A'])
 
 console.log(args)

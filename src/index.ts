@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import yargs from 'yargs'
-import type { Argv } from 'yargs'
+import type { Argv, PositionalOptionsType } from 'yargs'
 
 export class Command {
     handler() {}
@@ -30,25 +30,24 @@ export class Program {
                 'options',
                 command.constructor,
             ) as OptionOutput[]
+            const positionals = Reflect.getMetadata(
+                'positionals',
+                command.constructor,
+            ) as PositionalOutput[]
             program = program.command(
                 command.name,
                 command.description,
                 yargs => {
                     let result = yargs
                     options.forEach(option => {
-                        const type =
-                            option.type === Boolean
-                                ? 'boolean'
-                                : option.type === String
-                                  ? 'string'
-                                  : option.type === Number
-                                    ? 'number'
-                                    : option.type === Array
-                                      ? 'array'
-                                      : 'string'
-                        result = yargs.option(option.key as string, {
-                            type,
+                        result = yargs.option(option.key, {
+                            type: option.type,
                             alias: option.shorthand,
+                        })
+                    })
+                    positionals.forEach(positional => {
+                        result = yargs.positional(positional.key, {
+                            type: positional.type as PositionalOptionsType,
                         })
                     })
                     return result
@@ -58,6 +57,10 @@ export class Program {
                         // @ts-ignore
                         command[option.key] = argv[option.key as string]
                     })
+                    positionals.forEach(positional => {
+                        // @ts-ignore
+                        command[positional.key] = argv[positional.key as string]
+                    })
                     const instance = new command.constructor()
                     return instance.handler.call(command)
                 },
@@ -66,16 +69,28 @@ export class Program {
         return program
     }
 
-    Command(opts: {
-        name: string
-        description: string
-    }): ClassDecorator {
-        return (target) => {
+    Command(opts: { name: string; description: string }): ClassDecorator {
+        return target => {
             this.commands.push({
                 ...opts,
                 constructor: target as unknown as new () => Command,
             })
         }
+    }
+}
+
+export function matchDesignType(type: Function) {
+    switch (type) {
+        case String:
+            return 'string'
+        case Boolean:
+            return 'boolean'
+        case Number:
+            return 'number'
+        case Array:
+            return 'array'
+        default:
+            return 'string'
     }
 }
 
@@ -85,11 +100,7 @@ export interface OptionMetadata {
 
 export interface OptionOutput {
     key: string
-    type:
-        | StringConstructor
-        | BooleanConstructor
-        | NumberConstructor
-        | ArrayConstructor
+    type: PositionalOptionsType | 'array' | 'count'
     shorthand?: string
 }
 
@@ -100,9 +111,24 @@ export function Option(metadata: OptionMetadata = {}): PropertyDecorator {
             Reflect.getMetadata('options', target.constructor) || []
         options.push({
             key: propertyKey as string,
-            type,
+            type: matchDesignType(type),
             shorthand: metadata.shorthand,
         })
         Reflect.defineMetadata('options', options, target.constructor)
+    }
+}
+
+export type PositionalOutput = Omit<OptionOutput, 'shorthand'>
+
+export function Positional(): PropertyDecorator {
+    return function (target, propertyKey) {
+        const type = Reflect.getMetadata('design:type', target, propertyKey)
+        const positionals: PositionalOutput[] =
+            Reflect.getMetadata('positionals', target.constructor) || []
+        positionals.push({
+            key: propertyKey as string,
+            type: matchDesignType(type),
+        })
+        Reflect.defineMetadata('positionals', positionals, target.constructor)
     }
 }
