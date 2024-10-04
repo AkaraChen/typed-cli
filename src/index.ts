@@ -12,6 +12,10 @@ export class Program {
         public readonly description: string,
     ) {}
 
+    static make(opts: { name: string; description: string }) {
+        return new Program(opts.name, opts.description)
+    }
+
     private commands: Array<{
         name: string
         description: string
@@ -53,14 +57,13 @@ export class Program {
                     return result
                 },
                 argv => {
-                    options.forEach(option => {
-                        command[option.key] = argv[option.key]
-                    })
-                    positionals.forEach(positional => {
-                        command[positional.key] = argv[positional.key]
-                    })
                     const instance = new command.constructor()
-                    return instance.handler.call(command)
+                    options
+                        .concat(positionals)
+                        .forEach(
+                            option => (instance[option.key] = argv[option.key]),
+                        )
+                    return instance.handler()
                 },
             )
         })

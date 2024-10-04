@@ -1,7 +1,5 @@
 import { Program, Command, Option, Positional } from './index.js'
-import { deepEqual } from 'assert'
-
-const program = new Program('git', 'Git version control')
+import { deepStrictEqual } from 'assert'
 
 function makeMockFn() {
     let count = 0
@@ -9,6 +7,11 @@ function makeMockFn() {
 }
 
 const [mockFn, callCount] = makeMockFn()
+
+const program = Program.make({
+    name: 'git',
+    description: "The world's most powerful version control system",
+})
 
 @program.Command({
     name: 'add <files...>',
@@ -25,14 +28,14 @@ class Add extends Command {
 
     override handler() {
         mockFn()
-        deepEqual(this.files, ['index.js'])
-        deepEqual(this.all, true)
+        deepStrictEqual(this.files, ['index.js'])
+        deepStrictEqual(this.all, true)
     }
 }
 
 const args = program.yargs.parse(['add', 'index.js', '-A'])
 
-deepEqual(args, {
+deepStrictEqual(args, {
     _: ['add'],
     A: true,
     all: true,
@@ -40,4 +43,4 @@ deepEqual(args, {
     $0: 'git',
 })
 
-deepEqual(callCount(), 1)
+deepStrictEqual(callCount(), 1)
