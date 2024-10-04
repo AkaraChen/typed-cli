@@ -8,7 +8,7 @@ function makeMockFn() {
     return [() => count++, () => count]
 }
 
-const [mockFn, callCounter] = makeMockFn()
+const [mockFn, callCount] = makeMockFn()
 
 @program.Command({
     name: 'add <files...>',
@@ -40,4 +40,4 @@ deepEqual(args, {
     $0: 'git',
 })
 
-deepEqual(callCounter(), 1)
+deepEqual(callCount(), 1)

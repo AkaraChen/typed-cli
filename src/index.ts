@@ -54,12 +54,10 @@ export class Program {
                 },
                 argv => {
                     options.forEach(option => {
-                        // @ts-ignore
-                        command[option.key] = argv[option.key as string]
+                        command[option.key] = argv[option.key]
                     })
                     positionals.forEach(positional => {
-                        // @ts-ignore
-                        command[positional.key] = argv[positional.key as string]
+                        command[positional.key] = argv[positional.key]
                     })
                     const instance = new command.constructor()
                     return instance.handler.call(command)
